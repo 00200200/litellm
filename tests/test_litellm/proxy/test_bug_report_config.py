@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import sys
 from collections.abc import Iterator, Mapping
+from functools import reduce
+from typing import Final
 
 import pytest
 
@@ -134,6 +137,48 @@ def test_malformed_sections_produce_no_lines():
     }
 
     assert safe_config_lines(config, {}) == ()
+
+
+def test_nested_values_preserve_only_safe_leaves_in_original_order() -> None:
+    config: Final[Mapping[str, object]] = {
+        "litellm_settings": {
+            "callbacks": [
+                True,
+                "langfuse",
+                ["sk-private", False, ["langsmith"], None, 42, {"secret": "langfuse"}],
+                [],
+                ["sk-private"],
+                [["sk-private"]],
+                "langfuse",
+            ]
+        }
+    }
+
+    assert safe_config_lines(config, {}) == (
+        "litellm_settings.callbacks = [true, langfuse, [false, [langsmith]], langfuse]",
+    )
+
+
+def test_excessive_nesting_omits_the_whole_value_before_rendering() -> None:
+    def nest(value: object, _index: int) -> list[object]:
+        return [value]
+
+    nested: Final = reduce(nest, range(sys.getrecursionlimit()), True)
+    config: Final[Mapping[str, object]] = {
+        "litellm_settings": {"callbacks": [True, nested], "drop_params": True}
+    }
+
+    assert safe_config_lines(config, {}) == ("litellm_settings.drop_params = true",)
+
+
+def test_cyclic_value_is_omitted_before_rendering() -> None:
+    cyclic: Final[list[object]] = [True]
+    cyclic.append(cyclic)
+    config: Final[Mapping[str, object]] = {
+        "litellm_settings": {"callbacks": cyclic, "drop_params": True}
+    }
+
+    assert safe_config_lines(config, {}) == ("litellm_settings.drop_params = true",)
 
 
 @pytest.fixture

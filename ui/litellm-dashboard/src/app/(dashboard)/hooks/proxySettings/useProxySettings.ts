@@ -1,4 +1,5 @@
 import { fetchProxySettings } from "@/utils/proxyUtils";
+import { getProxyBaseUrl } from "@/components/networking";
 import { useQuery } from "@tanstack/react-query";
 import { createQueryKeys } from "../common/queryKeysFactory";
 
@@ -18,11 +19,15 @@ const EMPTY_PROXY_SETTINGS: ProxySettings = {
   LITELLM_UI_API_DOC_BASE_URL: null,
 };
 
-export default function useProxySettings(accessToken: string | null): ProxySettings {
-  const { data } = useQuery({
-    queryKey: [...proxySettingsKeys.all, accessToken],
+export function useProxySettingsQuery(accessToken: string | null) {
+  return useQuery<ProxySettings | null>({
+    queryKey: [...proxySettingsKeys.all, accessToken, getProxyBaseUrl()],
     queryFn: () => fetchProxySettings(accessToken),
     enabled: Boolean(accessToken),
   });
+}
+
+export default function useProxySettings(accessToken: string | null): ProxySettings {
+  const { data } = useProxySettingsQuery(accessToken);
   return data ?? EMPTY_PROXY_SETTINGS;
 }
