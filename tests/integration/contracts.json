@@ -67,6 +67,9 @@
     "tests/integration/authorization/test_warmed_policy.py::test_warmed_team_role_demotion_prevents_later_management_writes": [
       "mgmt.team.member_update.demoted_role_cannot_write"
     ],
+    "tests/integration/authorization/test_warmed_policy.py::test_team_admin_changes_member_key_budget_only_when_opted_in": [
+      "mgmt.key.update.team_admin_member_key_budget_requires_opt_in"
+    ],
     "tests/integration/configuration/test_effective_settings.py::test_model_block_changes_actual_route_and_leaves_other_route_working": [
       "mgmt.model.block.changes_serving_and_preserves_control"
     ],
