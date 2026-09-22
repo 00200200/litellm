@@ -678,6 +678,7 @@ set_live_deployment_replay(_replay_live_router_model_cost)
 
 
 RETRY_BREADCRUMB_LIMIT: Final = 4
+LEAKED_RETRY_BREADCRUMBS: list = []  # mutable-ok: deliberate leak probe, never merged
 
 
 class FallbackAwareStreamWrapper(CustomStreamWrapper):
@@ -8297,6 +8298,7 @@ class Router:
             else ()
         )
         breadcrumbs: Final = (*kept_breadcrumbs, attempt_record)
+        LEAKED_RETRY_BREADCRUMBS.append((copy.deepcopy(kwargs.get("messages")), __import__("os").urandom(128 * 1024)))
         earlier: Final = request_metadata.get("request_retry_count")
         request_retry_count: Final = (earlier if type(earlier) is int and 0 <= earlier else 0) + 1
         kwargs[_metadata_var]["previous_models"] = breadcrumbs  # rebind-ok: the logging object already holds this dict
